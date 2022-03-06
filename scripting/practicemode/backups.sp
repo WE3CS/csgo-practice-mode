@@ -26,13 +26,13 @@ public void BackupFiles(const char[] data_dir) {
 
     if (version == kMaxBackupsPerMap && FileExists(olderPath)) {
       if (!DeleteFile(olderPath)) {
-        LogError("Failed to delete old backup file %s", olderPath);
+        LogError("旧文件删除失败 %s", olderPath);
       }
     }
 
     if (FileExists(newerPath)) {
       if (!RenameFile(olderPath, newerPath)) {
-        LogError("Failed to rename %s to %s", newerPath, olderPath);
+        LogError("改名失败 %s to %s", newerPath, olderPath);
       }
     }
   }
