@@ -28,12 +28,12 @@ public Action Command_Settings(int client, int args) {
 
 public void GiveSettingsMenu(int client) {
   Menu menu = new Menu(SettingsMenuHandler);
-  menu.SetTitle("User settings:");
+  menu.SetTitle("用户设置:");
 
   for (int i = 0; i < view_as<int>(UserSetting_NumSettings); i++) {
     char buffer[128];
     Format(buffer, sizeof(buffer), "%s: %s", g_UserSettingDisplayName[i],
-           GetSetting(client, view_as<UserSetting>(i)) ? "enabled" : "disabled");
+           GetSetting(client, view_as<UserSetting>(i)) ? "启用" : "关闭");
     AddMenuInt(menu, i, buffer);
   }
 
