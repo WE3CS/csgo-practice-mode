@@ -1,4 +1,4 @@
-#define MESSAGE_PREFIX "[\x05PracticeMode\x01]"
+#define MESSAGE_PREFIX "[\x05我为C狂\x01]\x06练习模式中文版\x01 * "
 
 /**
  * Natives.
