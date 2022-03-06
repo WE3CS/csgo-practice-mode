@@ -10,8 +10,7 @@ stock void GiveReplayEditorMenu(int client, int pos = 0) {
   Menu menu = new Menu(ReplayMenuHandler);
   char replayName[REPLAY_NAME_LENGTH];
   GetReplayName(g_ReplayId[client], replayName, REPLAY_NAME_LENGTH);
-  bool frozen = IsReplayFrozen(g_ReplayId[client]);
-  menu.SetTitle("Replay editor: %s (id %s)", replayName, g_ReplayId[client]);
+  menu.SetTitle("重放编辑器: %s (ID %s)", replayName, g_ReplayId[client]);
 
   /* Page 1 */
   for (int i = 0; i < MAX_REPLAY_CLIENTS; i++) {
@@ -23,30 +22,26 @@ stock void GiveReplayEditorMenu(int client, int pos = 0) {
     if (HasRoleRecorded(g_ReplayId[client], i)) {
       char roleName[REPLAY_NAME_LENGTH];
       if (GetRoleName(g_ReplayId[client], i, roleName, sizeof(roleName))) {
-        AddMenuIntStyle(menu, i, style, "Change player %d role (%s)", i + 1, roleName);
+        AddMenuIntStyle(menu, i, style, "更改玩家 %d 角色 (%s)", i + 1, roleName);
       } else {
-        AddMenuIntStyle(menu, i, style, "Change player %d role", i + 1);
+        AddMenuIntStyle(menu, i, style, "更改玩家 %d 角色", i + 1);
       }
     } else {
-      AddMenuIntStyle(menu, i, style, "Add player %d role", i + 1);
+      AddMenuIntStyle(menu, i, style, "添加玩家 %d 角色", i + 1);
     }
   }
 
-  menu.AddItem("replay", "Run replay");
+  menu.AddItem("replay", "播放重放内容");
 
   /* Page 2 */
-  menu.AddItem("recordall", "Record all player roles at once");
-  menu.AddItem("stop", "Stop current replay");
-  menu.AddItem("name", "Name this replay");
-  menu.AddItem("copy", "Copy this replay to a new replay");
-  if (!frozen)
-    menu.AddItem("freeze", "Freeze role data (prevents accidental edits)");
-  else
-    menu.AddItem("unfreeze", "Unfreeze role data for edits");
-  menu.AddItem("delete", "Delete this replay entirely");
+  menu.AddItem("recordall", "一次性录制所有角色玩家");
+  menu.AddItem("stop", "停止当前重放");
+  menu.AddItem("name", "命名此重放");
+  menu.AddItem("copy", "复制此重放至新重放");
+  menu.AddItem("delete", "完全删除此重放");
 
   char display[128];
-  Format(display, sizeof(display), "Display overlay round timer: %s",
+  Format(display, sizeof(display), "显示重叠式循环计时器: %s",
          g_ReplayPlayRoundTimer[client] ? "yes" : "no");
   menu.AddItem("round_timer", display);
 
@@ -72,11 +67,11 @@ public int ReplayMenuHandler(Menu menu, MenuAction action, int param1, int param
         }
       }
       if (already_playing) {
-        PM_Message(client, "Wait for the current replay to finish first.");
+        PM_Message(client, "等待当前重放首先完成。");
       } else {
         char replayName[REPLAY_NAME_LENGTH];
         GetReplayName(g_ReplayId[client], replayName, sizeof(replayName));
-        PM_MessageToAll("Starting replay: %s", replayName);
+        PM_MessageToAll("开始重放: %s", replayName);
         RunReplay(g_ReplayId[client]);
       }
 
@@ -86,7 +81,7 @@ public int ReplayMenuHandler(Menu menu, MenuAction action, int param1, int param
       CancelAllReplays();
       if (BotMimic_IsPlayerRecording(client)) {
         BotMimic_StopRecording(client, false /* save */);
-        PM_Message(client, "Cancelled recording.");
+        PM_Message(client, "停止录制。");
       }
       GiveReplayEditorMenu(client, GetMenuSelectionPosition());
 
@@ -102,7 +97,7 @@ public int ReplayMenuHandler(Menu menu, MenuAction action, int param1, int param
     } else if (StrEqual(buffer, "copy")) {
       char replayName[REPLAY_NAME_LENGTH];
       GetReplayName(g_ReplayId[client], replayName, REPLAY_NAME_LENGTH);
-      PM_Message(client, "Copied replay: %s", replayName);
+      PM_Message(client, "已复制重放: %s", replayName);
 
       char oldReplayId[REPLAY_ID_LENGTH];
       strcopy(oldReplayId, sizeof(oldReplayId), g_ReplayId[client]);
@@ -110,27 +105,15 @@ public int ReplayMenuHandler(Menu menu, MenuAction action, int param1, int param
       CopyReplay(oldReplayId, g_ReplayId[client]);
 
       char newName[REPLAY_NAME_LENGTH];
-      Format(newName, sizeof(newName), "Copy of %s", replayName);
+      Format(newName, sizeof(newName), "%s的复制版本", replayName);
       SetReplayName(g_ReplayId[client], newName);
 
       GiveReplayEditorMenu(client, GetMenuSelectionPosition());
 
     } else if (StrContains(buffer, "name") == 0) {
-      PM_Message(client, "Use .namereplay <name> to name this replay.");
+      PM_Message(client, "使用 .namereplay <名称> 以命名重放。");
       GiveReplayEditorMenu(client, GetMenuSelectionPosition());
 
-    } else if (StrContains(buffer, "freeze") == 0) {
-      PM_Message(client, "Froze replay. Role edit buttons will be disabled until the replay is unfrozen.");
-      SetReplayFrozen(g_ReplayId[client], true);
-      GiveReplayEditorMenu(client, GetMenuSelectionPosition());
-    } else if (StrContains(buffer, "unfreeze") == 0) {
-      PM_Message(client, "Unfroze replay.");
-      SetReplayFrozen(g_ReplayId[client], false);
-      // Going back to the same page in the replay menu makes sense for menu consistency,
-      // but if a user pressed this they probably want to do some edits, so there's a case
-      // to be made for not using GetMenuSelectionPosition here. Let's favor consistency in 
-      // the menu behavior for a simpler user experience.
-      GiveReplayEditorMenu(client, GetMenuSelectionPosition());
     } else if (StrEqual(buffer, "recordall")) {
       int count = 0;
       for (int i = 1; i <= MaxClients; i++) {
@@ -139,25 +122,25 @@ public int ReplayMenuHandler(Menu menu, MenuAction action, int param1, int param
         }
       }
       if (count == 0) {
-        PM_Message(client, "Cannot record a full replay with no players on T/CT.");
+        PM_Message(client, "在T / CT上没有玩家时，无法录制完整的重放。");
         return 0;
       }
       if (count > MAX_REPLAY_CLIENTS) {
         PM_Message(
             client,
-            "Cannot record a full replay with %d players. Only up to %d is supported. Other players should move to spectator.",
+            "无法记录％d个玩家的完整重播。 仅支持％d。 其他玩家应进入观察者那里。",
             count, MAX_REPLAY_CLIENTS);
         return 0;
       }
 
       if (BotMimic_IsPlayerRecording(client)) {
-        PM_Message(client, "Finish your current recording first!");
+        PM_Message(client, "您应当首先完成您的录制。");
         GiveReplayEditorMenu(client, GetMenuSelectionPosition());
         return 0;
       }
 
       if (IsReplayPlaying()) {
-        PM_Message(client, "Finish your current replay first!");
+        PM_Message(client, "您应当首先完成您的录制。");
         GiveReplayEditorMenu(client, GetMenuSelectionPosition());
         return 0;
       }
@@ -173,9 +156,9 @@ public int ReplayMenuHandler(Menu menu, MenuAction action, int param1, int param
       }
       g_RecordingFullReplay = true;
       g_RecordingFullReplayClient = client;
-      PM_MessageToAll("Began recording %d-player replay.", count);
+      PM_MessageToAll("开始录制 %d-玩家 重放。", count);
       PM_MessageToAll(
-          "When any player presses their inspect button (default:f) the recording will stop.");
+          "当任何玩家按下其检视武器按钮（默认：F键）时，录制将停止。");
 
     } else {
       // Handling for recording players [0, 4]
@@ -212,7 +195,7 @@ void FinishRecording(int client, bool printOnFail) {
     if (BotMimic_IsPlayerRecording(client)) {
       BotMimic_StopRecording(client, true /* save */);
     } else if (printOnFail) {
-      PM_Message(client, "You aren't recording a playback right now.");
+      PM_Message(client, "您现在不在录制回放。");
     }
   }
 }
@@ -259,7 +242,7 @@ public Action Command_Cancel(int client, int args) {
 
   } else if (numReplaying > 0) {
     CancelAllReplays();
-    PM_MessageToAll("Cancelled all replays.");
+    PM_MessageToAll("取消所有回放。");
   }
 
   return Plugin_Handled;
@@ -276,27 +259,26 @@ stock void GiveReplayRoleMenu(int client, int role, int pos = 0) {
   GetRoleName(g_ReplayId[client], role, roleName, sizeof(roleName));
 
   if (StrEqual(roleName, "")) {
-    menu.SetTitle("%s: role %d", replayName, role + 1, roleName);
+    menu.SetTitle("%s: 角色 %d", replayName, role + 1, roleName);
   } else {
-    menu.SetTitle("%s: role %d (%s)", replayName, role + 1, roleName);
+    menu.SetTitle("%s: 角色 %d (%s)", replayName, role + 1, roleName);
   }
 
   menu.ExitButton = true;
   menu.ExitBackButton = true;
 
   bool recorded = HasRoleRecorded(g_ReplayId[client], role);
-  bool frozen = IsReplayFrozen(g_ReplayId[client]);
   if (recorded) {
-    menu.AddItem("record", "Re-record role", EnabledIf(!frozen));
+    menu.AddItem("record", "重录角色");
   } else {
-    menu.AddItem("record", "Record role", EnabledIf(!frozen));
+    menu.AddItem("record", "录制角色");
   }
 
-  menu.AddItem("spawn", "Go to spawn position", EnabledIf(recorded));
-  menu.AddItem("nades", "View nade lineups", EnabledIf(recorded));
-  menu.AddItem("play", "Play this recording", EnabledIf(recorded));
-  menu.AddItem("name", "Name this role", EnabledIf(recorded && !frozen));
-  menu.AddItem("delete", "Delete recording", EnabledIf(recorded && !frozen));
+  menu.AddItem("spawn", "传送至重生点", EnabledIf(recorded));
+  menu.AddItem("play", "播放此重放", EnabledIf(recorded));
+  menu.AddItem("name", "命名这个角色", EnabledIf(recorded));
+  menu.AddItem("nades", "检视投掷物组合", EnabledIf(recorded));
+  menu.AddItem("delete", "删除录制", EnabledIf(recorded));
 
   menu.DisplayAt(client, MENU_TIME_FOREVER, pos);
 }
@@ -310,12 +292,12 @@ public int ReplayRoleMenuHandler(Menu menu, MenuAction action, int param1, int p
 
     if (StrEqual(buffer, "record")) {
       if (BotMimic_IsPlayerRecording(client)) {
-        PM_Message(client, "Finish your current recording first!");
+        PM_Message(client, "您应当首先完成您的录制。");
         GiveReplayRoleMenu(client, role, GetMenuSelectionPosition());
         return 0;
       }
       if (IsReplayPlaying()) {
-        PM_Message(client, "Finish your current replay first!");
+        PM_Message(client, "您应当首先完成您的重放。");
         GiveReplayRoleMenu(client, role, GetMenuSelectionPosition());
         return 0;
       }
@@ -328,7 +310,7 @@ public int ReplayRoleMenuHandler(Menu menu, MenuAction action, int param1, int p
 
     } else if (StrEqual(buffer, "play")) {
       if (IsReplayPlaying()) {
-        PM_Message(client, "Finish your current replay first!");
+        PM_Message(client, "您应当首先完成您的重放。");
         GiveMainReplaysMenu(client);
         return 0;
       }
@@ -340,12 +322,12 @@ public int ReplayRoleMenuHandler(Menu menu, MenuAction action, int param1, int p
       GiveReplayRoleMenu(client, role, GetMenuSelectionPosition());
 
     } else if (StrEqual(buffer, "name")) {
-      PM_Message(client, "Use .namerole <name> to name this role.");
+      PM_Message(client, "使用 .namerole <名称> 以命名此角色。");
       GiveReplayRoleMenu(client, role, GetMenuSelectionPosition());
 
     } else if (StrEqual(buffer, "nades")) {
       if (g_NadeReplayData[client].Length == 0) {
-        PM_Message(client, "This role has no nades saved in it.");
+        PM_Message(client, "此角色没有保存任何投掷物。");
         GiveReplayRoleMenu(client, role, GetMenuSelectionPosition());
       } else {
         GiveReplayRoleNadesMenu(client);
@@ -353,7 +335,7 @@ public int ReplayRoleMenuHandler(Menu menu, MenuAction action, int param1, int p
 
     } else if (StrEqual(buffer, "delete")) {
       DeleteReplayRole(g_ReplayId[client], role);
-      PM_Message(client, "Deleted role %d.", role + 1);
+      PM_Message(client, "删除角色 %d.", role + 1);
       GiveReplayEditorMenu(client);
     }
 
@@ -370,7 +352,7 @@ public int ReplayRoleMenuHandler(Menu menu, MenuAction action, int param1, int p
 
 stock void GiveReplayRoleNadesMenu(int client, int pos = 0) {
   Menu menu = new Menu(ReplayRoleNadesMenuHandler);
-  menu.SetTitle("Role %d nades", g_CurrentEditingRole[client] + 1);
+  menu.SetTitle("角色 %d 的投掷物", g_CurrentEditingRole[client] + 1);
   menu.ExitButton = true;
   menu.ExitBackButton = true;
 
@@ -433,7 +415,7 @@ public void GiveDeleteConfirmationMenu(int client) {
   GetReplayName(g_ReplayId[client], replayName, sizeof(replayName));
 
   Menu menu = new Menu(DeletionMenuHandler);
-  menu.SetTitle("Confirm deletion of replay: %s", replayName);
+  menu.SetTitle("确定删除: %s", replayName);
   menu.ExitButton = false;
   menu.ExitBackButton = false;
   menu.Pagination = MENU_NO_PAGINATION;
@@ -444,8 +426,8 @@ public void GiveDeleteConfirmationMenu(int client) {
   }
 
   // Add actual choices
-  menu.AddItem("no", "No, keep it");
-  menu.AddItem("yes", "Yes, delete this");
+  menu.AddItem("no", "不，请保留它。");
+  menu.AddItem("yes", "是的，删除它。");
   menu.Display(client, MENU_TIME_FOREVER);
 }
 
@@ -459,7 +441,7 @@ public int DeletionMenuHandler(Menu menu, MenuAction action, int param1, int par
       char replayName[REPLAY_NAME_LENGTH];
       GetReplayName(g_ReplayId[client], replayName, sizeof(replayName));
       DeleteReplay(g_ReplayId[client]);
-      PM_MessageToAll("Deleted replay: %s", replayName);
+      PM_MessageToAll("已删除重放: %s", replayName);
       GiveMainReplaysMenu(client);
     } else {
       GiveReplayEditorMenu(client);
@@ -482,7 +464,7 @@ stock void StartRecording(int client, int role, bool printCommands = true) {
   g_CurrentRecordingStartTime[client] = GetGameTime();
 
   char recordName[128];
-  Format(recordName, sizeof(recordName), "Player %d role", role + 1);
+  Format(recordName, sizeof(recordName), "玩家 %d 角色", role + 1);
   char roleString[32];
   Format(roleString, sizeof(roleString), "role%d", role);
   BotMimic_StartRecording(client, recordName, "practicemode", roleString);
@@ -498,13 +480,13 @@ stock void StartRecording(int client, int role, bool printCommands = true) {
   }
 
   if (printCommands) {
-    PM_Message(client, "Started recording player %d role.", role + 1);
+    PM_Message(client, "已开始录制玩家 %d 角色.", role + 1);
 
     if (GetSetting(client, UserSetting_StopsRecordingInspectKey)) {
       PM_Message(client,
-                 "Use .finish, your inspect (default:f) bind, or .noclip to stop recording.");
+                 "输入 .finish、您的武器检视按键（默认F键）或.noclip 以停止录制。");
     } else {
-      PM_Message(client, "Use .finish or .noclip to stop recording.");
+      PM_Message(client, "输入 .finish、您的武器检视按键（默认F键）或.noclip 以停止录制。");
     }
   }
 }
@@ -519,7 +501,7 @@ public Action BotMimic_OnStopRecording(int client, char[] name, char[] category,
     if (!save) {
       // We only handle the not-saving case here because BotMimic_OnRecordSaved below
       // is handling the saving case.
-      PM_Message(client, "Cancelled recording player role %d", g_CurrentEditingRole[client] + 1);
+      PM_Message(client, "已取消录制玩家角色 %d", g_CurrentEditingRole[client] + 1);
       GiveReplayMenuInContext(client);
     }
   }
@@ -534,12 +516,12 @@ public void BotMimic_OnRecordSaved(int client, char[] name, char[] category, cha
     SetRoleTeam(g_ReplayId[client], g_CurrentEditingRole[client], GetClientTeam(client));
 
     if (!g_RecordingFullReplay) {
-      PM_Message(client, "Finished recording player role %d", g_CurrentEditingRole[client] + 1);
+      PM_Message(client, "已结束录制玩家角色 %d", g_CurrentEditingRole[client] + 1);
       GiveReplayMenuInContext(client);
     } else {
       if (g_RecordingFullReplayClient == client) {
         g_CurrentEditingRole[client] = -1;
-        PM_MessageToAll("Finished recording full replay.");
+        PM_MessageToAll("已结束录制该重放。");
         RequestFrame(ResetFullReplayRecording, GetClientSerial(client));
       }
     }
