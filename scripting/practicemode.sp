@@ -1109,7 +1109,7 @@ public void ReadPracticeSettings() {
 
   KeyValues kv = new KeyValues("practice_settings");
   if (!kv.ImportFromFile(filePath)) {
-    LogError("Failed to import keyvalue from practice config file \"%s\"", filePath);
+    LogError("从练习模式配置文件 \"%s\"导入规则失败", filePath);
     delete kv;
     return;
   }
@@ -1126,23 +1126,23 @@ public void ReadPracticeSettings() {
         kv.GetString("name", name, sizeof(name));
 
         char enabledString[64];
-        kv.GetString("default", enabledString, sizeof(enabledString), "enabled");
+        kv.GetString("default", enabledString, sizeof(enabledString), "启用");
         bool enabled =
-            StrEqual(enabledString, "enabled", false) || StrEqual(enabledString, "enable", false);
+            StrEqual(enabledString, "启用", false) || StrEqual(enabledString, "enable", false);
 
         bool changeable = (kv.GetNum("changeable", 1) != 0);
 
         // read the enabled cvar list
         ArrayList enabledCvars = new ArrayList(CVAR_NAME_LENGTH);
         ArrayList enabledValues = new ArrayList(CVAR_VALUE_LENGTH);
-        if (kv.JumpToKey("enabled")) {
+        if (kv.JumpToKey("启用")) {
           ReadCvarKv(kv, enabledCvars, enabledValues);
           kv.GoBack();
         }
 
         ArrayList disabledCvars = new ArrayList(CVAR_NAME_LENGTH);
         ArrayList disabledValues = new ArrayList(CVAR_VALUE_LENGTH);
-        if (kv.JumpToKey("disabled")) {
+        if (kv.JumpToKey("关闭")) {
           ReadCvarKv(kv, disabledCvars, disabledValues);
           kv.GoBack();
         }
@@ -1175,6 +1175,7 @@ public void ReadPracticeSettings() {
     g_MapList.PushString("de_overpass");
     g_MapList.PushString("de_train");
     g_MapList.PushString("de_vertigo");
+	g_MapList.PushString("de_ancient");
   }
 
   Call_StartForward(g_OnPracticeModeSettingsRead);
@@ -1192,7 +1193,7 @@ public void LaunchPracticeMode() {
     ChangeSetting(i, PM_IsSettingEnabled(i), false, true);
   }
 
-  PM_MessageToAll("Practice mode is now enabled.");
+  PM_MessageToAll("练习模式已启动。");
   Call_StartForward(g_OnPracticeModeEnabled);
   Call_Finish();
 }
@@ -1237,7 +1238,7 @@ stock bool ChangeSetting(int index, bool enabled, bool print = true, bool force_
     char enabledString[32];
     GetEnabledString(enabledString, sizeof(enabledString), enabled);
     if (!StrEqual(name, "")) {
-      PM_MessageToAll("%s is now %s.", name, enabledString);
+      PM_MessageToAll("%s 现在已 %s.", name, enabledString);
     }
   }
 
@@ -1288,7 +1289,7 @@ public void ExitPracticeMode() {
   }
 
   ServerCommand("exec sourcemod/practicemode_end.cfg");
-  PM_MessageToAll("Practice mode is now disabled.");
+  PM_MessageToAll("练习模式已关闭。");
 }
 
 public Action Timer_GivePlayersMoney(Handle timer) {
@@ -1429,7 +1430,7 @@ public Action Event_SmokeDetonate(Event event, const char[] name, bool dontBroad
   if (!g_InPracticeMode) {
     return;
   }
-  GrenadeDetonateTimerHelper(event, "smoke grenade");
+  GrenadeDetonateTimerHelper(event, "烟雾弹");
 }
 
 public void GrenadeDetonateTimerHelper(Event event, const char[] grenadeName) {
@@ -1444,7 +1445,7 @@ public void GrenadeDetonateTimerHelper(Event event, const char[] grenadeName) {
         float dt = GetEngineTime() - view_as<float>(g_ClientGrenadeThrowTimes[client].Get(i, 1));
         g_ClientGrenadeThrowTimes[client].Erase(i);
         if (GetSetting(client, UserSetting_ShowAirtime)) {
-          PM_Message(client, "Airtime of %s: %.1f seconds", grenadeName, dt);
+          PM_Message(client, "%s的滞空时间: %.1f 秒", grenadeName, dt);
         }
         break;
       }
@@ -1472,10 +1473,10 @@ public void GetTestingFlashInfo(int serial) {
   int client = GetClientFromSerial(serial);
   if (IsPlayer(client) && g_TestingFlash[client]) {
     float flashDuration = GetFlashDuration(client);
-    PM_Message(client, "Flash duration: %.1f seconds", flashDuration);
+     PM_Message(client, "闪光持续时间: %.1f 秒", flashDuration);
 
     if (flashDuration < g_FlashEffectiveThresholdCvar.FloatValue) {
-      PM_Message(client, "Ineffective flash");
+      PM_Message(client, "无效的闪光弹。");
       CreateTimer(1.0, Timer_FakeGrenadeBack, GetClientSerial(client));
     } else {
       float delay = flashDuration - 1.0;
@@ -1499,12 +1500,12 @@ public Action Event_FreezeEnd(Event event, const char[] name, bool dontBroadcast
 
     if (g_ClientNoFlash[i]) {
       g_ClientNoFlash[i] = false;
-      PM_Message(i, "Disabled noflash on round start.");
+      PM_Message(i, "回合开始时禁用屏蔽闪光弹功能。");
     }
 
     if (GetEntityMoveType(i) == MOVETYPE_NOCLIP) {
       SetEntityMoveType(i, MOVETYPE_WALK);
-      PM_Message(i, "Disabled noclip on round start.");
+      PM_Message(i, "回合开始时禁用穿墙(Noclip)。");
     }
 
     FreezeEnd_RoundRepeat(i);
@@ -1563,7 +1564,7 @@ public void OnClientSayCommand_Post(int client, const char[] command, const char
       if (CheckCommandAccess(client, "sm_prac", ADMFLAG_CHANGEMAP)) {
         GivePracticeMenu(client);
       } else {
-        PM_Message(client, "You don't have permission to access practicemode.");
+        PM_Message(client, "您没有启动练习模式的权限。");
       }
     } else if (StrEqual(chatCommand, ".help")) {
       ShowHelpInfo(client);
