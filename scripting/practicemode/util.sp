@@ -5,7 +5,7 @@
 
 #tryinclude "manual_version.sp"
 #if !defined PLUGIN_VERSION
-#define PLUGIN_VERSION "1.3.5-dev"
+#define PLUGIN_VERSION "1.3.4-dev"
 #endif
 
 static char _colorNames[][] = {"{NORMAL}", "{DARK_RED}",    "{PINK}",      "{GREEN}",
@@ -99,9 +99,9 @@ stock int FindAndErase(ArrayList array, int value) {
 
 stock void GetEnabledString(char[] buffer, int length, bool variable, int client = LANG_SERVER) {
   if (variable)
-    Format(buffer, length, "enabled");
+    Format(buffer, length, "启用");
   else
-    Format(buffer, length, "disabled");
+    Format(buffer, length, "关闭");
 }
 
 stock int GetCvarIntSafe(const char[] cvarName, int defaultValue = 0) {
@@ -314,7 +314,7 @@ stock void ReadCvarKv(KeyValues kv, ArrayList cvars, ArrayList values) {
 }
 
 stock void ChangeMap(const char[] map, float delay = 3.0) {
-  PM_MessageToAll("Changing map to %s...", map);
+  PM_MessageToAll("更换地图至 %s...", map);
   DataPack pack = CreateDataPack();
   pack.WriteString(map);
   CreateTimer(delay, Timer_DelayedChangeMap, pack);
