@@ -1,4 +1,4 @@
-csgo-practice-mode
+csgo-practice-mode_1.3.4汉化
 ===========================
 
 [![Build status](http://ci.splewis.net/job/csgo-practice-mode/badge/icon)](http://ci.splewis.net/job/csgo-practice-mode/)
